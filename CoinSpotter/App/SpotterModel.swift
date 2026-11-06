@@ -319,7 +319,7 @@ final class SpotterModel {
     let kit = MockDeviceKit.shared
     guard on else {
       stop()
-      kit.disable()
+      await kit.disable()
       testModeOn = false
       return
     }
@@ -336,7 +336,7 @@ final class SpotterModel {
       glasses.services.camera.setCameraFeed(cameraFacing: .back)
       testModeOn = true
     } catch {
-      kit.disable()
+      await kit.disable()
       report(error)
     }
   }
