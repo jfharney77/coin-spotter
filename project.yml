@@ -1,0 +1,76 @@
+# XcodeGen spec. On a Mac: `brew install xcodegen && xcodegen` then open CoinSpotter.xcodeproj.
+name: CoinSpotter
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "17.2"
+
+packages:
+  MetaWearablesDAT:
+    url: https://github.com/facebook/meta-wearables-dat-ios
+    exactVersion: 1.0.1
+
+targets:
+  CoinSpotter:
+    type: application
+    platform: iOS
+    # Generates a shared scheme so the app can be built from the command line.
+    scheme: {}
+    sources:
+      - CoinSpotter
+    dependencies:
+      - package: MetaWearablesDAT
+        product: MWDATCore
+      - package: MetaWearablesDAT
+        product: MWDATCamera
+      - package: MetaWearablesDAT
+        product: MWDATMockDevice
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.coinspotter
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        # Swift 5 language mode: the code was written without a compiler at hand,
+        # so concurrency diagnostics are kept as warnings instead of errors.
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        # Leave both empty while the Meta AI app is in Developer Mode.
+        META_APP_ID: ""
+        CLIENT_TOKEN: ""
+    info:
+      path: CoinSpotter/Info.plist
+      properties:
+        CFBundleDisplayName: Coin Spotter
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
+            CFBundleURLSchemes:
+              - coinspotter
+        MWDAT:
+          AppLinkURLScheme: coinspotter://
+          MetaAppID: $(META_APP_ID)
+          ClientToken: $(CLIENT_TOKEN)
+          TeamID: $(DEVELOPMENT_TEAM)
+        UIBackgroundModes:
+          - processing
+          - bluetooth-central
+          - bluetooth-peripheral
+          - external-accessory
+          - audio
+        UISupportedExternalAccessoryProtocols:
+          - com.meta.ar.wearable
+        NSBluetoothAlwaysUsageDescription: Needed to connect to your Meta glasses.
+        NSLocalNetworkUsageDescription: This lets your phone find and connect to your glasses over Wi-Fi.
+        NSBonjourServices:
+          - _bonjour._tcp
+        NSCameraUsageDescription: Used only in test mode, where the phone camera stands in for the glasses.
+    entitlements:
+      path: CoinSpotter/CoinSpotter.entitlements
+      properties:
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)$(CFBundleIdentifier)
+        com.apple.developer.networking.HotspotConfiguration: true
+        com.apple.developer.networking.wifi-info: true

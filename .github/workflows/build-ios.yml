@@ -1,0 +1,60 @@
+name: Build iOS app
+
+# Builds CoinSpotter on a GitHub-hosted Mac and uploads an unsigned .ipa.
+# Install it on the iPhone from Windows with Sideloadly, which signs it with your Apple ID.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select newest Xcode
+        run: |
+          newest=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          echo "Using $newest"
+          sudo xcode-select -s "$newest"
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen
+
+      - name: Build for iPhone (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project CoinSpotter.xcodeproj \
+            -scheme CoinSpotter \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee xcodebuild.log
+
+      - name: Package .ipa
+        run: |
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/CoinSpotter.app Payload/
+          zip -qry CoinSpotter.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CoinSpotter-ipa
+          path: CoinSpotter.ipa
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: xcodebuild.log
